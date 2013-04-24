@@ -4,16 +4,17 @@
     var clearInterval = window.clearInterval;
 
     var WorkerPoll = function (workerUrl, poolSize) {
+        var self = this;
         this.size = poolSize || this.size;
         this.url = workerUrl;
 
         var timer = setInterval(function () {
-            if (this.workerQueue.length < 10) {
-                this.workerQueue.push(new window.Worker(this.url));
+            if (self.workerQueue.length < 10) {
+                self.workerQueue.push(new window.Worker(self.url));
             } else {
                 clearInterval(timer);
             }
-        }.bind(this), 100);
+        }, 100);
     };
 
     WorkerPoll.prototype = {
@@ -32,17 +33,18 @@
             }
         },
         runTask : function (message, callback, context) {
+            var self = this;
             var worker = this.workerQueue.shift();
 
             var handler = function (evt) {
                 callback.call(context || window, evt);
                 worker.removeEventListener('message', handler);
-                this.workerQueue.push(worker);
-                if (this.taskQueue.length > 0) {
-                    var task = this.taskQueue.shift();
-                    this.runTask(task.message, task.callback, task.context);
+                self.workerQueue.push(worker);
+                if (self.taskQueue.length > 0) {
+                    var task = self.taskQueue.shift();
+                    self.runTask(task.message, task.callback, task.context);
                 }
-            }.bind(this);
+            };
 
             worker.addEventListener('message', handler);
             worker.postMessage(message);
